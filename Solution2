@@ -1,0 +1,55 @@
+class FenwickTree:
+    def __init__(self, size):
+        self.n = size + 2
+        self.tree = [0] * self.n
+
+    def update(self, i, delta):
+        i += 1
+        while i < self.n:
+            self.tree[i] += delta
+            i += i & -i
+
+    def query(self, i):
+        i += 1
+        res = 0
+        while i > 0:
+            res += self.tree[i]
+            i -= i & -i
+        return res
+
+    def range_query(self, l, r):
+        return self.query(r) - self.query(l - 1)
+
+class Solution:
+    def popcountDepth(self, nums, queries):
+        def get_depth(x):
+            d = 0
+            while x != 1:
+                x = bin(x).count("1")
+                d += 1
+            return d
+
+        n = len(nums)
+        depths = [get_depth(x) for x in nums]
+
+        # Create 6 Fenwick Trees for depths 0–5
+        trees = [FenwickTree(n) for _ in range(6)]
+        for i, d in enumerate(depths):
+            trees[d].update(i, 1)
+
+        res = []
+        for q in queries:
+            if q[0] == 1:
+                _, l, r, k = q
+                res.append(trees[k].range_query(l, r))
+            else:
+                _, idx, val = q
+                old_d = depths[idx]
+                new_d = get_depth(val)
+                if old_d != new_d:
+                    trees[old_d].update(idx, -1)
+                    trees[new_d].update(idx, 1)
+                    depths[idx] = new_d
+                nums[idx] = val
+
+        return res
